@@ -9,3 +9,6 @@
 ```node main.js -r 1 -i IF_FILE OUT_FILE```
 
 ```node main.js --help``` выводит справку по командам
+
+
+P.S. тестировалось на NodeJS 15.2.0
