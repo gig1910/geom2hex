@@ -6,14 +6,8 @@ let f_out_name;
 let radius         = 1;
 let different_mode = true;
 
-if(process.argv.length > 2){
-	let i = 2;
-	while(i < process.argv.length){
-		let argV = process.argv[i];
-
-		switch(true){
-			case argV === '--help' || argV === '/h':            //Вывод справки по ключам
-				console.info(`
+function printHelp(){
+	console.info(`
 Справка по ключам
 -r --raduis     -- Радиус многоугольника (шестигранника) в километрах, разделитель дробной части точка
 -i --intersects -- Режим пересечения, без обрезко по области входного полигона
@@ -23,6 +17,17 @@ f_out			-- Путь в результирующему файлу
 Пример строки запуска
 nodejs main.js -r 0.5 -i in.json out.json
 `);
+}
+
+if(process.argv.length > 2){
+	let i = 2;
+	while(i < process.argv.length){
+		let argV = process.argv[i];
+
+		switch(true){
+			case argV === '--help' || argV === '/h':            //Вывод справки по ключам
+				printHelp();
+				process.exit(0);
 
 				break;
 
@@ -54,21 +59,27 @@ nodejs main.js -r 0.5 -i in.json out.json
 }
 
 if(!f_in_name){
-	throw new Error('Не передано имя входного файла');
+	console.error('Не передано имя входного файла');
+	printHelp();
+	process.exit(-500);
 }
 
 if(!f_out_name){
-	throw new Error('Не передано имя выходного файла');
+	console.error('Не передано имя выходного файла');
+	printHelp();
+	process.exit(-400);
 }
 
 if(!fs.existsSync(f_in_name)){
-	throw new Error('Входной файл не обнаружен');
+	console.error('Входной файл не обнаружен');
+	process.exit(-300);
 }
 let GEOJSON_in;
 try{
 	GEOJSON_in = fs.readFileSync(f_in_name);
 }catch(err){
-	throw new Error('Не могу прочитать входной файл');
+	console.error('Не могу прочитать входной файл');
+	process.exit(-200);
 }
 
 let pol = JSON.parse(GEOJSON_in);
@@ -91,7 +102,7 @@ let result;
 
 if(pol.hasOwnProperty('features') && pol.features.length > 0){
 	result = [];
-	for(let i=0; i<pol.features.length; i++){
+	for(let i = 0; i < pol.features.length; i++){
 		let _pol = pol.features[i].geometry;
 		result.push(processGeom(_pol));
 	}
