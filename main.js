@@ -110,11 +110,26 @@ if(pol.hasOwnProperty('features') && pol.features.length > 0){
 	result = [];
 	for(let i = 0; i < pol.features.length; i++){
 		let _pol = pol.features[i].geometry;
-
-		result.push(processGeom(_pol));
+		if(['LineString', 'MultiLineString'].includes(_pol.type)){
+			_pol = turf.lineToPolygon(_pol, {autoComplete: false}).geometry;
+		}
+		if(_pol){
+			result.push(processGeom(_pol));
+		}else{
+			console.warn('Неверный тип геометрии. Игнорируем...');
+		}
 	}
 }else{
-	result = processGeom(pol);
+	if(pol.hasOwnProperty('features')){
+		pol = pol.features.geometry;
+	}
+	if(['LineString', 'MultiLineString'].includes(pol.type)){
+		pol = turf.lineToPolygon(pol, {autoComplete: false});
+	}
+
+	if(pol){
+		result = processGeom(pol);
+	}
 }
 
 try{
