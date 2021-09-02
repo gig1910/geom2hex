@@ -5,6 +5,7 @@ let f_in_name;
 let f_out_name;
 let radius         = 1;
 let different_mode = true;
+let bb_hex = false;
 
 function printHelp(){
 	console.info(`
@@ -25,13 +26,13 @@ if(process.argv.length > 2){
 		let argV = process.argv[i];
 
 		switch(true){
-			case argV === '--help' || argV === '/h':            //Вывод справки по ключам
+			case argV === '--help' || argV === '/h':       //Вывод справки по ключам
 				printHelp();
 				process.exit(0);
 
 				break;
 
-			case argV === '-r' || argV === '--radius':      //Обновляем значение количества потоков
+			case argV === '-r' || argV === '--radius':     //
 				radius = parseFloat(process.argv[++i]);
 				if(Number.isNaN(radius)){
 					console.error('Ошибка в значении радиуса. Должно быть число, а передано %s', process.argv[i]);
@@ -39,8 +40,12 @@ if(process.argv.length > 2){
 				}
 				break;
 
-			case argV === '-i' || argV === '--intersects': //Обновляем значение количества потоков
+			case argV === '-i' || argV === '--intersects': //
 				different_mode = false;
+				break;
+
+			case argV === '-b' || argV === '--bb-box': //
+				bb_hex = true;
 				break;
 
 			default:
@@ -85,17 +90,18 @@ try{
 let pol = JSON.parse(GEOJSON_in);
 
 function processGeom(geom){
-	let bbox = turf.bbox(geom);
+	let bbox = turf.bbox(turf.buffer(geom, radius, {unit: 'kilometers'}));
 
 	let hexGrid = turf.hexGrid(bbox, radius, 'kilometers', false);
 
-	hexGrid.features = hexGrid
-		.features
-		.map(el => different_mode ? turf.intersect(geom, el) : el)
-		.filter(el => different_mode ? !!el : turf.booleanIntersects(geom, el));
+	if(!bb_hex){
+		hexGrid.features = hexGrid
+			.features
+			.map(el => different_mode ? turf.intersect(geom, el) : el)
+			.filter(el => different_mode ? !!el : turf.booleanIntersects(geom, el));
+	}
 
 	return hexGrid;
-
 }
 
 let result;
@@ -104,6 +110,7 @@ if(pol.hasOwnProperty('features') && pol.features.length > 0){
 	result = [];
 	for(let i = 0; i < pol.features.length; i++){
 		let _pol = pol.features[i].geometry;
+
 		result.push(processGeom(_pol));
 	}
 }else{
