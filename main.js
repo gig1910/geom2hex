@@ -1,19 +1,25 @@
 const turf = require('@turf/turf');
 
 const fs           = require('fs');
+const {combine}    = require('@turf/turf');
 let f_in_name;
 let f_out_name;
 let radius         = 1;
 let different_mode = true;
-let bb_hex = false;
+let bb_hex         = false;
+let merge          = false;
+let only_polygon   = false;
 
 function printHelp(){
 	console.info(`
 Справка по ключам
--r --raduis     -- Радиус многоугольника (шестигранника) в километрах, разделитель дробной части точка
--i --intersects -- Режим пересечения, без обрезко по области входного полигона
-f_in			-- Путь к входному файлу с полигонами
-f_out			-- Путь в результирующему файлу
+-r --radius     	-- Радиус многоугольника (шестигранника) в километрах, разделитель дробной части точка
+-i --intersects 	-- Режим пересечения, без обрезко по области входного полигона
+-m --merge      	-- Режим объединения коллекции в одну мультигеометрию
+-p --only-polygon	-- Режим работы только с полигональными типами геометрий
+
+f_in				-- Путь к входному файлу с полигонами
+f_out				-- Путь в результирующему файлу
 
 Пример строки запуска
 nodejs main.js -r 0.5 -i in.json out.json
@@ -46,6 +52,14 @@ if(process.argv.length > 2){
 
 			case argV === '-b' || argV === '--bb-box': //
 				bb_hex = true;
+				break;
+
+			case argV === '-m' || argV === '--merge': //
+				merge = true;
+				break;
+
+			case argV === '-p' || argV === '--only-polygon': //
+				only_polygon = true;
 				break;
 
 			default:
@@ -106,14 +120,29 @@ function processGeom(geom){
 
 let result;
 
+if(merge){
+	pol = turf.combine(pol);
+}
+
 if(pol.hasOwnProperty('features') && pol.features.length > 0){
 	result = [];
 	for(let i = 0; i < pol.features.length; i++){
 		let _pol = pol.features[i].geometry;
 		if(_pol.coordinates && _pol.coordinates.toString() !== ''){
-			if(['LineString', 'MultiLineString'].includes(_pol.type)){
-				_pol = turf.lineToPolygon(_pol, {autoComplete: false}).geometry;
+			if(['LineString', 'MultiLineString'].includes(_pol.type) && !only_polygon){
+				let opt = {
+					autoComplete: merge
+				};
+				if(merge){
+					opt.orderCoords = true;
+					opt.mutate      = true;
+				}
+				_pol = turf.lineToPolygon(_pol, opt).geometry;
+
+			}else if(!['Polygon', 'MultiPolygon'].includes(_pol.type)){
+				_pol = null;
 			}
+
 			if(_pol){
 				result.push(processGeom(_pol));
 			}else{
