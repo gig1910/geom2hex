@@ -6,6 +6,6 @@
 3. запустить скрипт
 
 # Запуск скрипта
-```nodejs main.js -r 1 -i IF_FILE OUT_FILE```
+```node main.js -r 1 -i IF_FILE OUT_FILE```
 
-```nodejs main.js --help``` выводит справку по командам
+```node main.js --help``` выводит справку по командам
